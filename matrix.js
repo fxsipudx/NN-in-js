@@ -1,186 +1,132 @@
-// Matrix class for neural network operations
-class Matrix {
+// matrix.js
+// Implements a basic Matrix class using Float32Array for performance.
+// Supports common operations: creation, addition, subtraction, multiplication, transpose, dot, map.
+
+export class Matrix {
   constructor(rows, cols, data = null) {
     this.rows = rows;
     this.cols = cols;
-    
-    // Initialize with provided data or zeros
-    if (data) {
-      this.data = data;
-    } else {
-      this.data = [];
-      for (let i = 0; i < rows; i++) {
-        this.data[i] = new Array(cols).fill(0);
-      }
-    }
+    this.data = data instanceof Float32Array
+      ? data
+      : new Float32Array(rows * cols);
   }
 
-  // Create matrix filled with random values between -1 and 1
+  // Create a matrix filled with zeros
+  static zeros(rows, cols) {
+    return new Matrix(rows, cols);
+  }
+
+  // Create a matrix with random values in [-1, 1]
   static random(rows, cols) {
-    const matrix = new Matrix(rows, cols);
-    for (let i = 0; i < rows; i++) {
-      for (let j = 0; j < cols; j++) {
-        matrix.data[i][j] = Math.random() * 2 - 1; // Random between -1 and 1
-      }
+    const m = new Matrix(rows, cols);
+    for (let i = 0; i < m.data.length; i++) {
+      m.data[i] = Math.random() * 2 - 1;
     }
-    return matrix;
+    return m;
   }
 
-  // Create matrix from 1D array (useful for inputs/outputs)
+  // Convert a flat array into a column vector
   static fromArray(arr) {
-    const matrix = new Matrix(arr.length, 1);
+    const m = new Matrix(arr.length, 1);
     for (let i = 0; i < arr.length; i++) {
-      matrix.data[i][0] = arr[i];
+      m.data[i] = arr[i];
     }
-    return matrix;
+    return m;
   }
 
-  // Convert matrix to 1D array
+  // Convert matrix data to a JS array
   toArray() {
-    const arr = [];
+    return Array.from(this.data);
+  }
+
+  // Internal index calc
+  _idx(i, j) {
+    return i * this.cols + j;
+  }
+
+  // Get value at (i, j)
+  get(i, j) {
+    return this.data[this._idx(i, j)];
+  }
+
+  // Set value at (i, j)
+  set(i, j, v) {
+    this.data[this._idx(i, j)] = v;
+  }
+
+  // Apply a function to every element, return new Matrix
+  map(fn) {
+    const result = new Matrix(this.rows, this.cols);
     for (let i = 0; i < this.rows; i++) {
       for (let j = 0; j < this.cols; j++) {
-        arr.push(this.data[i][j]);
+        const v = this.get(i, j);
+        result.set(i, j, fn(v, i, j));
       }
     }
-    return arr;
+    return result;
   }
 
-  // Matrix addition - can add scalar or another matrix
+  // Add matrix or scalar
   add(n) {
     if (n instanceof Matrix) {
-      // Matrix addition
-      if (this.rows !== n.rows || this.cols !== n.cols) {
-        throw new Error('Matrix dimensions must match for addition');
+      if (n.rows !== this.rows || n.cols !== this.cols) {
+        throw new Error('Dimension mismatch');
       }
-      const result = new Matrix(this.rows, this.cols);
-      for (let i = 0; i < this.rows; i++) {
-        for (let j = 0; j < this.cols; j++) {
-          result.data[i][j] = this.data[i][j] + n.data[i][j];
-        }
-      }
-      return result;
-    } else {
-      // Scalar addition
-      const result = new Matrix(this.rows, this.cols);
-      for (let i = 0; i < this.rows; i++) {
-        for (let j = 0; j < this.cols; j++) {
-          result.data[i][j] = this.data[i][j] + n;
-        }
-      }
-      return result;
+      return this.map((v, i, j) => v + n.get(i, j));
     }
+    return this.map(v => v + n);
   }
 
-  // Matrix subtraction
+  // Subtract matrix or scalar
   subtract(n) {
     if (n instanceof Matrix) {
-      if (this.rows !== n.rows || this.cols !== n.cols) {
-        throw new Error('Matrix dimensions must match for subtraction');
+      if (n.rows !== this.rows || n.cols !== this.cols) {
+        throw new Error('Dimension mismatch');
       }
-      const result = new Matrix(this.rows, this.cols);
-      for (let i = 0; i < this.rows; i++) {
-        for (let j = 0; j < this.cols; j++) {
-          result.data[i][j] = this.data[i][j] - n.data[i][j];
-        }
-      }
-      return result;
-    } else {
-      // Scalar subtraction
-      const result = new Matrix(this.rows, this.cols);
-      for (let i = 0; i < this.rows; i++) {
-        for (let j = 0; j < this.cols; j++) {
-          result.data[i][j] = this.data[i][j] - n;
-        }
-      }
-      return result;
+      return this.map((v, i, j) => v - n.get(i, j));
     }
+    return this.map(v => v - n);
   }
 
-  // Element-wise multiplication (Hadamard product)
+  // Element-wise multiply (Hadamard) or scalar
   multiply(n) {
     if (n instanceof Matrix) {
-      if (this.rows !== n.rows || this.cols !== n.cols) {
-        throw new Error('Matrix dimensions must match for element-wise multiplication');
+      if (n.rows !== this.rows || n.cols !== this.cols) {
+        throw new Error('Dimension mismatch');
       }
-      const result = new Matrix(this.rows, this.cols);
-      for (let i = 0; i < this.rows; i++) {
-        for (let j = 0; j < this.cols; j++) {
-          result.data[i][j] = this.data[i][j] * n.data[i][j];
-        }
-      }
-      return result;
-    } else {
-      // Scalar multiplication
-      const result = new Matrix(this.rows, this.cols);
-      for (let i = 0; i < this.rows; i++) {
-        for (let j = 0; j < this.cols; j++) {
-          result.data[i][j] = this.data[i][j] * n;
-        }
-      }
-      return result;
+      return this.map((v, i, j) => v * n.get(i, j));
     }
+    return this.map(v => v * n);
   }
 
-  // Matrix multiplication (dot product)
-  static multiply(a, b) {
-    if (a.cols !== b.rows) {
-      throw new Error('Columns of A must match rows of B for matrix multiplication');
+  // Transpose the matrix
+  static transpose(mat) {
+    const result = new Matrix(mat.cols, mat.rows);
+    for (let i = 0; i < mat.rows; i++) {
+      for (let j = 0; j < mat.cols; j++) {
+        result.set(j, i, mat.get(i, j));
+      }
     }
-    
+    return result;
+  }
+
+  // Dot product: matrix multiplication
+  static dot(a, b) {
+    if (a.cols !== b.rows) {
+      throw new Error('Dimension mismatch for dot product');
+    }
     const result = new Matrix(a.rows, b.cols);
-    for (let i = 0; i < result.rows; i++) {
-      for (let j = 0; j < result.cols; j++) {
+    for (let i = 0; i < a.rows; i++) {
+      for (let j = 0; j < b.cols; j++) {
         let sum = 0;
         for (let k = 0; k < a.cols; k++) {
-          sum += a.data[i][k] * b.data[k][j];
+          sum += a.get(i, k) * b.get(k, j);
         }
-        result.data[i][j] = sum;
-      }
-    }
-    return result;
-  }
-
-  // Transpose matrix (flip rows and columns)
-  transpose() {
-    const result = new Matrix(this.cols, this.rows);
-    for (let i = 0; i < this.rows; i++) {
-      for (let j = 0; j < this.cols; j++) {
-        result.data[j][i] = this.data[i][j];
-      }
-    }
-    return result;
-  }
-
-  // Apply function to each element
-  map(func) {
-    const result = new Matrix(this.rows, this.cols);
-    for (let i = 0; i < this.rows; i++) {
-      for (let j = 0; j < this.cols; j++) {
-        result.data[i][j] = func(this.data[i][j]);
-      }
-    }
-    return result;
-  }
-
-  // Print matrix for debugging
-  print() {
-    console.table(this.data);
-  }
-
-  // Copy matrix
-  copy() {
-    const result = new Matrix(this.rows, this.cols);
-    for (let i = 0; i < this.rows; i++) {
-      for (let j = 0; j < this.cols; j++) {
-        result.data[i][j] = this.data[i][j];
+        result.set(i, j, sum);
       }
     }
     return result;
   }
 }
 
-// Export for use in other files
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = Matrix;
-}
+export default Matrix;
