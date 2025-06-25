@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MNIST Neural Network Visualizer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .left-panel {
+            width: 400px;
+            padding: 20px;
+            background: #2a2a2a;
+            border-radius: 10px;
+            margin-right: 20px;
+        }
+        
+        .right-panel {
+            flex: 1;
+            background: #2a2a2a;
+            border-radius: 10px;
+            position: relative;
+        }
+        
+        .drawing-area {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        #drawingCanvas {
+            border: 2px solid #444;
+            background: white;
+            cursor: crosshair;
+            border-radius: 5px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        
+        .train-btn {
+            background: #2196F3;
+        }
+        
+        .train-btn:hover {
+            background: #1976D2;
+        }
+        
+        .clear-btn {
+            background: #f44336;
+        }
+        
+        .clear-btn:hover {
+            background: #d32f2f;
+        }
+        
+        .status {
+            background: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        
+        .prediction {
+            background: #1a4a5a;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        .prediction-digit {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        .confidence-bars {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        
+        .confidence-bar {
+            width: 8%;
+            background: #444;
+            height: 60px;
+            border-radius: 3px;
+            position: relative;
+            display: flex;
+            align-items: end;
+            justify-content: center;
+        }
+        
+        .confidence-fill {
+            width: 100%;
+            background: linear-gradient(to top, #4CAF50, #81C784);
+            border-radius: 3px;
+            transition: height 0.3s ease;
+        }
+        
+        .confidence-label {
+            position: absolute;
+            bottom: -20px;
+            font-size: 12px;
+        }
+        
+        #networkViz {
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            font-size: 18px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #444;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #81C784);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="left-panel">
+        <h2>Draw a Digit (0-9)</h2>
+        
+        <div class="drawing-area">
+            <canvas id="drawingCanvas" width="280" height="280"></canvas>
+        </div>
+        
+        <div class="controls">
+            <button id="clearBtn" class="clear-btn">Clear</button>
+            <button id="predictBtn">Predict</button>
+            <button id="trainBtn" class="train-btn" disabled>Train Network</button>
+        </div>
+        
+        <div class="prediction" id="predictionArea" style="display: none;">
+            <div>Prediction: <span class="prediction-digit" id="predictedDigit">?</span></div>
+            <div class="confidence-bars" id="confidenceBars">
+                <!-- Confidence bars will be generated here -->
+            </div>
+        </div>
+        
+        <div class="status" id="statusArea">
+            <div>Status: <span id="statusText">Loading MNIST data...</span></div>
+            <div class="progress-bar" id="progressBar" style="display: none;">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div id="trainingStats" style="display: none;">
+                <div>Epoch: <span id="currentEpoch">0</span></div>
+                <div>Loss: <span id="currentLoss">0.000</span></div>
+                <div>Accuracy: <span id="currentAccuracy">0.0%</span></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="right-panel">
+        <div id="networkViz" class="loading">
+            <div>Neural Network Visualization Loading...</div>
+        </div>
+    </div>
+
+    <script src="matrix.js"></script>
+    <script src="nn.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
